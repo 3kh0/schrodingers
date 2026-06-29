@@ -14,7 +14,6 @@ export type ItemId =
 
 export type RoundTwist =
   | "none"
-  | "grant_item"
   | "observer_bets"
   | "phantom_box"
   | "half_life_decay"

@@ -2,46 +2,29 @@ import type { KAPLAYCtx } from "kaplay";
 import { playActSting } from "../audio";
 import { COLORS } from "../config";
 import type { GameState } from "../types";
-import { drawScanlines, makeButton } from "../ui";
+import { drawScanlines, makeButton, text } from "../ui";
 
 export function registerActIntroScene(k: KAPLAYCtx) {
   k.scene("actIntro", (state: GameState) => {
     const rc = state.roundConfig;
+    const cx = k.center().x;
+    const play = () =>
+      makeButton(k, "PLAY", cx, rc.act === 1 ? 330 : 380, 220, 50, () => k.go("play", state));
 
     playActSting();
 
-    k.add([
-      k.text(`ACT ${rc.act}`, { size: 20 }),
-      k.pos(k.center().x, 140),
-      k.anchor("center"),
-      k.color(...COLORS.textDim),
-    ]);
+    // Act 1 is the bare opening — no items, no twists. Keep its card minimal.
+    if (rc.act === 1) {
+      text(k, "ACT 1", cx, 230, { size: 48, color: COLORS.crtGreen });
+      play();
+      drawScanlines(k);
+      return;
+    }
 
-    k.add([
-      k.text(rc.actTitle, { size: 40 }),
-      k.pos(k.center().x, 200),
-      k.anchor("center"),
-      k.color(...COLORS.crtGreen),
-    ]);
-
-    k.add([
-      k.text(rc.briefing, { size: 18, width: 500 }),
-      k.pos(k.center().x, 280),
-      k.anchor("center"),
-      k.color(...COLORS.text),
-    ]);
-
-    k.add([
-      k.text(`Round ${rc.roundInAct}: ${rc.title}`, { size: 16 }),
-      k.pos(k.center().x, 340),
-      k.anchor("center"),
-      k.color(...COLORS.textDim),
-    ]);
-
-    makeButton(k, "ENTER THE LAB", k.center().x, 430, 220, 50, () => {
-      k.go("play", state);
-    });
-
+    text(k, `ACT ${rc.act}`, cx, 135, { size: 20, color: COLORS.textDim });
+    text(k, rc.actTitle, cx, 195, { size: 40, color: COLORS.crtGreen });
+    text(k, rc.briefing, cx, 265, { size: 18, width: 500 });
+    play();
     drawScanlines(k);
   });
 }

@@ -23,7 +23,8 @@ export function registerPlayScene(k: KAPLAYCtx) {
     const active = () => current.boxes.find((b) => b.id === current.activeBoxId)!;
 
     drawHeader(k, current);
-    drawObserverPanel(k, current);
+    // Act 1 is just coinflips — keep the Observer out of sight until items appear.
+    if (current.act > 1) drawObserverPanel(k, current);
     drawProbabilityDial(k, current);
 
     drawBoxes(k, current, (id) => {

@@ -1,7 +1,7 @@
 import type { KAPLAYCtx } from "kaplay";
 import { COLORS, type RGB } from "../config";
 import type { EndState } from "../types";
-import { drawScanlines, makeButton } from "../ui";
+import { drawScanlines, makeButton, text } from "../ui";
 
 export function registerEndScene(k: KAPLAYCtx) {
   k.scene("end", (state: EndState) => {
@@ -10,20 +10,10 @@ export function registerEndScene(k: KAPLAYCtx) {
       ? "Nine rounds of quantum dread. You survived."
       : "Superposition claims another victim.";
     const color: RGB = state.won ? COLORS.alive : COLORS.dead;
+    const cx = k.center().x;
 
-    k.add([
-      k.text(title, { size: 34 }),
-      k.pos(k.center().x, 100),
-      k.anchor("center"),
-      k.color(...color),
-    ]);
-
-    k.add([
-      k.text(subtitle, { size: 17 }),
-      k.pos(k.center().x, 150),
-      k.anchor("center"),
-      k.color(...COLORS.textDim),
-    ]);
+    text(k, title, cx, 100, { size: 34, color });
+    text(k, subtitle, cx, 150, { size: 17, color: COLORS.textDim });
 
     const lines = [
       `Rounds cleared: ${state.stats.roundsCleared}`,
@@ -33,26 +23,14 @@ export function registerEndScene(k: KAPLAYCtx) {
       `Observer mistakes: ${state.stats.observerWrong}`,
       `Final lives: ${state.playerLives} / ${state.maxPlayerLives}`,
     ];
+    lines.forEach((line, i) => text(k, line, cx, 210 + i * 28, { size: 15 }));
 
-    lines.forEach((line, i) => {
-      k.add([
-        k.text(line, { size: 15 }),
-        k.pos(k.center().x, 210 + i * 28),
-        k.anchor("center"),
-        k.color(...COLORS.text),
-      ]);
+    text(k, "RNG: crypto.getRandomValues() — true quantum randomness", cx, 400, {
+      size: 11,
+      color: COLORS.crtDim,
     });
 
-    k.add([
-      k.text("RNG: crypto.getRandomValues() — true quantum randomness", { size: 11 }),
-      k.pos(k.center().x, 400),
-      k.anchor("center"),
-      k.color(...COLORS.crtDim),
-    ]);
-
-    makeButton(k, "PLAY AGAIN", k.center().x, 450, 200, 48, () => {
-      k.go("menu");
-    });
+    makeButton(k, "PLAY AGAIN", cx, 450, 200, 48, () => k.go("menu"));
 
     drawScanlines(k);
   });

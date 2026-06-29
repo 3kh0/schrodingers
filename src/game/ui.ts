@@ -1,30 +1,33 @@
-import type { KAPLAYCtx } from "kaplay";
-import { COLORS } from "./config";
+import type { Anchor, Comp, GameObj, KAPLAYCtx, TextComp } from "kaplay";
+import { COLORS, type RGB } from "./config";
 import { ITEMS } from "./items";
 import type { BoxState, GameState, ItemId } from "./types";
 import { getActiveBox } from "./boxes";
 
-export const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export function drawPanel(
-  k: KAPLAYCtx,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  label?: string,
-) {
+type TextOpts = { size?: number; color?: RGB; anchor?: Anchor; width?: number; z?: number };
+
+export function text(k: KAPLAYCtx, str: string, x: number, y: number, opts: TextOpts = {}) {
+  const { size = 14, color = COLORS.text, anchor = "center", width, z } = opts;
+  const comps: Comp[] = [
+    k.text(str, width ? { size, width } : { size }),
+    k.pos(x, y),
+    k.anchor(anchor),
+    k.color(...color),
+  ];
+  if (z !== undefined) comps.push(k.z(z));
+  return k.add(comps);
+}
+
+function drawPanel(k: KAPLAYCtx, x: number, y: number, w: number, h: number, label?: string) {
   const panel = k.add([
     k.pos(x, y),
     k.rect(w, h),
     k.color(...COLORS.panel),
     k.outline(2, k.rgb(...COLORS.panelBorder)),
   ]);
-
-  if (label) {
-    k.add([k.text(label, { size: 13 }), k.pos(x + 10, y + 8), k.color(...COLORS.textDim)]);
-  }
-
+  if (label) text(k, label, x + 10, y + 8, { size: 13, color: COLORS.textDim, anchor: "topleft" });
   return panel;
 }
 
@@ -49,27 +52,21 @@ export function makeButton(
     "button",
   ]);
 
-  const txt = k.add([
-    k.text(label, { size: Math.min(18, Math.floor(w / Math.max(label.length * 0.55, 6))) }),
-    k.pos(x, y),
-    k.anchor("center"),
-    k.color(...(enabled ? COLORS.text : COLORS.textDim)),
-  ]);
+  const txt = text(k, label, x, y, {
+    size: Math.min(18, Math.floor(w / Math.max(label.length * 0.55, 6))),
+    color: enabled ? COLORS.text : COLORS.textDim,
+  });
 
   if (enabled) {
-    btn.onHover(() => {
-      btn.color = k.rgb(...COLORS.buttonHover);
-    });
-    btn.onHoverEnd(() => {
-      btn.color = k.rgb(...COLORS.button);
-    });
+    btn.onHover(() => (btn.color = k.rgb(...COLORS.buttonHover)));
+    btn.onHoverEnd(() => (btn.color = k.rgb(...COLORS.button)));
     btn.onClick(onPress);
   }
 
   return { btn, txt };
 }
 
-export function livesText(lives: number, max = 3): string {
+function livesText(lives: number, max = 3): string {
   return "♥".repeat(Math.max(0, lives)) + "♡".repeat(Math.max(0, max - lives));
 }
 
@@ -103,84 +100,57 @@ export function screenShake(k: KAPLAYCtx, intensity = 6, duration = 0.35) {
 }
 
 export function drawHeader(k: KAPLAYCtx, state: GameState) {
-  const rc = state.roundConfig;
-  k.add([
-    k.text(`Act ${rc.act} · Round ${rc.roundInAct}/3 — ${rc.title}`, { size: 15 }),
-    k.pos(20, 16),
-    k.color(...COLORS.textDim),
-  ]);
-
-  k.add([
-    k.text(`RUN ${state.globalRound}/9`, { size: 13 }),
-    k.pos(k.center().x, 16),
-    k.anchor("top"),
-    k.color(...COLORS.crtDim),
-  ]);
-
-  k.add([
-    k.text(`You ${livesText(state.playerLives, state.maxPlayerLives)}`, { size: 18 }),
-    k.pos(k.width() - 20, 16),
-    k.anchor("topright"),
-    k.color(...COLORS.alive),
-  ]);
+  text(k, `ACT ${state.roundConfig.act}`, 20, 16, {
+    size: 15,
+    color: COLORS.textDim,
+    anchor: "topleft",
+  });
+  text(k, `RUN ${state.globalRound}/9`, k.center().x, 16, {
+    size: 13,
+    color: COLORS.crtDim,
+    anchor: "top",
+  });
+  text(k, `You ${livesText(state.playerLives, state.maxPlayerLives)}`, k.width() - 20, 16, {
+    size: 18,
+    color: COLORS.alive,
+    anchor: "topright",
+  });
 }
 
 export function drawObserverPanel(k: KAPLAYCtx, state: GameState) {
   drawPanel(k, 24, 52, 188, 150, "THE OBSERVER");
-  k.add([
-    k.text(livesText(state.observerLives), { size: 26 }),
-    k.pos(118, 120),
-    k.anchor("center"),
-    k.color(...COLORS.dead),
-  ]);
+  text(k, livesText(state.observerLives), 118, 120, { size: 26, color: COLORS.dead });
 
   const quotes = ['"Bet, human."', '"Observe."', '"Collapse it."', '"The cat waits."'];
-  const quote = quotes[state.globalRound % quotes.length];
-  k.add([
-    k.text(quote, { size: 13 }),
-    k.pos(118, 168),
-    k.anchor("center"),
-    k.color(...COLORS.textDim),
-  ]);
+  text(k, quotes[state.globalRound % quotes.length], 118, 168, { size: 13, color: COLORS.textDim });
 }
 
 export function drawProbabilityDial(k: KAPLAYCtx, state: GameState) {
   const active = getActiveBox(state);
   drawPanel(k, k.width() - 212, 52, 188, 150, "PROBABILITY");
-  const pct = Math.round(active.displayedProbability * 100);
-  k.add([
-    k.text(`${pct}%`, { size: 44 }),
-    k.pos(k.width() - 118, 118),
-    k.anchor("center"),
-    k.color(...COLORS.crtGreen),
-  ]);
-  k.add([
-    k.text("ALIVE", { size: 14 }),
-    k.pos(k.width() - 118, 158),
-    k.anchor("center"),
-    k.color(...COLORS.textDim),
-  ]);
+  text(k, `${Math.round(active.displayedProbability * 100)}%`, k.width() - 118, 118, {
+    size: 44,
+    color: COLORS.crtGreen,
+  });
+  text(k, "ALIVE", k.width() - 118, 158, { size: 14, color: COLORS.textDim });
 
   if (state.roundConfig.twist === "quantum_shotgun" && state.shotgunAliveCount) {
-    k.add([
-      k.text(`${state.shotgunAliveCount} alive hidden`, { size: 11 }),
-      k.pos(k.width() - 118, 182),
-      k.anchor("center"),
-      k.color(...COLORS.textDim),
-    ]);
+    text(k, `${state.shotgunAliveCount} alive hidden`, k.width() - 118, 182, {
+      size: 11,
+      color: COLORS.textDim,
+    });
   }
 }
 
 function boxIcon(box: BoxState): string {
   if (box.phantom && box.peeked) return "VOID";
-  if ((box.peeked || box.collapsed) && box.outcome) {
+  if ((box.peeked || box.collapsed) && box.outcome)
     return box.outcome === "alive" ? "^..^" : "x..x";
-  }
   return "? ? ?";
 }
 
 export function drawBoxes(k: KAPLAYCtx, state: GameState, onSelect: (id: string) => void) {
-  const boxes = state.boxes;
+  const { boxes } = state;
   const count = boxes.length;
   const startX = k.center().x - ((count - 1) * 110) / 2;
   const y = 250;
@@ -188,25 +158,19 @@ export function drawBoxes(k: KAPLAYCtx, state: GameState, onSelect: (id: string)
   boxes.forEach((box, i) => {
     const x = startX + i * 110;
     const selected = box.id === state.activeBoxId;
-    const border = selected ? COLORS.crtGreen : COLORS.rust;
 
     const rect = k.add([
       k.pos(x, y),
       k.anchor("center"),
       k.rect(count > 1 ? 96 : 200, count > 1 ? 80 : 130),
       k.color(...COLORS.steel),
-      k.outline(selected ? 4 : 2, k.rgb(...border)),
+      k.outline(selected ? 4 : 2, k.rgb(...(selected ? COLORS.crtGreen : COLORS.rust))),
       k.area(),
       k.opacity(1),
       "box",
     ]);
 
-    k.add([
-      k.text(box.label, { size: 11 }),
-      k.pos(x, y - (count > 1 ? 52 : 78)),
-      k.anchor("center"),
-      k.color(...COLORS.textDim),
-    ]);
+    text(k, box.label, x, y - (count > 1 ? 52 : 78), { size: 11, color: COLORS.textDim });
 
     const icon = k.add([
       k.text(boxIcon(box), { size: count > 1 ? 18 : 34 }),
@@ -217,12 +181,7 @@ export function drawBoxes(k: KAPLAYCtx, state: GameState, onSelect: (id: string)
     ]);
 
     if (box.entangledWith) {
-      k.add([
-        k.text("⇄", { size: 14 }),
-        k.pos(x, y + (count > 1 ? 38 : 58)),
-        k.anchor("center"),
-        k.color(...COLORS.crtDim),
-      ]);
+      text(k, "⇄", x, y + (count > 1 ? 38 : 58), { size: 14, color: COLORS.crtDim });
     }
 
     let tick = 0;
@@ -232,14 +191,13 @@ export function drawBoxes(k: KAPLAYCtx, state: GameState, onSelect: (id: string)
       icon.opacity = 0.55 + Math.sin(tick * 5) * 0.35;
     });
 
-    if (count > 1) {
-      rect.onClick(() => onSelect(box.id));
-    }
+    if (count > 1) rect.onClick(() => onSelect(box.id));
   });
 }
 
 export function drawItemTray(k: KAPLAYCtx, state: GameState, onUse: (item: ItemId) => void) {
-  drawPanel(k, 24, k.height() - 88, k.width() - 48, 72, "QUANTUM TOOLKIT");
+  // No items in play (Act 1, final duel) → hide the tray entirely.
+  if (state.roundConfig.itemsDisabled) return;
 
   const slots = 4;
   const slotW = (k.width() - 80) / slots;
@@ -257,35 +215,14 @@ export function drawItemTray(k: KAPLAYCtx, state: GameState, onUse: (item: ItemI
       k.outline(1, k.rgb(...COLORS.panelBorder)),
     ]);
 
-    if (item) {
-      const def = ITEMS[item];
-      const enabled = !state.roundConfig.itemsDisabled;
-      makeButton(k, def.short, x, y, slotW - 16, 42, () => onUse(item), enabled);
-    } else {
-      k.add([
-        k.text("—", { size: 20 }),
-        k.pos(x, y),
-        k.anchor("center"),
-        k.color(...COLORS.textDim),
-      ]);
-    }
-  }
-
-  if (state.roundConfig.itemsDisabled) {
-    k.add([
-      k.text("ITEMS LOCKED — FINAL DUEL", { size: 11 }),
-      k.pos(k.center().x, k.height() - 82),
-      k.anchor("center"),
-      k.color(...COLORS.dead),
-    ]);
+    if (item) makeButton(k, ITEMS[item].short, x, y, slotW - 16, 42, () => onUse(item));
+    else text(k, "—", x, y, { size: 20, color: COLORS.textDim });
   }
 }
 
-export function drawMessageLog(k: KAPLAYCtx, message: string) {
-  return k.add([
-    k.text(message, { size: 14, width: k.width() - 60 }),
-    k.pos(k.center().x, 360),
-    k.anchor("center"),
-    k.color(...COLORS.text),
-  ]);
+export function drawMessageLog(k: KAPLAYCtx, message: string): GameObj<TextComp> {
+  return text(k, message, k.center().x, 360, {
+    size: 14,
+    width: k.width() - 60,
+  }) as GameObj<TextComp>;
 }

@@ -1,10 +1,10 @@
 import type { KAPLAYCtx } from "kaplay";
-import { playCollapse, playItemUse } from "../audio";
+import { playItemUse } from "../audio";
 import { COLORS, type RGB } from "../config";
 import { isNewAct } from "../rounds";
 import type { GameState } from "../types";
 import { advanceRound, isDefeat, isVictory, useCatTreat } from "../state";
-import { drawScanlines, makeButton, screenShake } from "../ui";
+import { drawScanlines, makeButton, screenShake, text } from "../ui";
 
 export function registerRevealScene(k: KAPLAYCtx) {
   k.scene("reveal", (state: GameState) => {
@@ -12,22 +12,13 @@ export function registerRevealScene(k: KAPLAYCtx) {
     const alive = outcome === "alive" && !state.phantomWrong;
     const color: RGB = state.phantomWrong ? COLORS.textDim : alive ? COLORS.alive : COLORS.dead;
 
-    playCollapse(alive && !state.phantomWrong);
-
     if (!state.playerCorrect) screenShake(k);
 
     k.add([k.rect(k.width(), k.height()), k.color(0, 0, 0), k.opacity(0.55), k.z(0)]);
 
-    k.add([
-      k.text("WAVEFUNCTION COLLAPSED", { size: 22 }),
-      k.pos(k.center().x, 72),
-      k.anchor("center"),
-      k.color(...COLORS.crtGreen),
-      k.z(1),
-    ]);
-
+    const cx = k.center().x;
     const count = state.boxes.length;
-    const startX = k.center().x - ((count - 1) * 100) / 2;
+    const startX = cx - ((count - 1) * 100) / 2;
 
     state.boxes.forEach((box, i) => {
       const x = startX + i * 100;
@@ -44,44 +35,24 @@ export function registerRevealScene(k: KAPLAYCtx) {
         k.z(1),
       ]);
 
-      k.add([
-        k.text(icon, { size: count > 1 ? 20 : 40 }),
-        k.pos(x, 200),
-        k.anchor("center"),
-        k.color(...(box.phantom && isActive ? COLORS.textDim : color)),
-        k.z(1),
-      ]);
+      text(k, icon, x, 200, {
+        size: count > 1 ? 20 : 40,
+        color: box.phantom && isActive ? COLORS.textDim : color,
+        z: 1,
+      });
     });
 
     const headline = state.phantomWrong ? "PHANTOM BOX" : `CAT IS ${outcome.toUpperCase()}`;
-
-    k.add([
-      k.text(headline, { size: 32 }),
-      k.pos(k.center().x, 310),
-      k.anchor("center"),
-      k.color(...color),
-      k.z(1),
-    ]);
-
-    k.add([
-      k.text(state.message, { size: 14, width: k.width() - 80 }),
-      k.pos(k.center().x, 355),
-      k.anchor("center"),
-      k.color(...COLORS.text),
-      k.z(1),
-    ]);
+    text(k, headline, cx, 310, { size: 32, color, z: 1 });
+    text(k, state.message, cx, 355, { size: 14, width: k.width() - 80, z: 1 });
 
     if (state.observerGuess) {
-      k.add([
-        k.text(
-          `Observer bet ${state.observerGuess.toUpperCase()} — ${state.observerCorrect ? "correct" : "wrong"}`,
-          { size: 13 },
-        ),
-        k.pos(k.center().x, 385),
-        k.anchor("center"),
-        k.color(...COLORS.textDim),
-        k.z(1),
-      ]);
+      const verdict = state.observerCorrect ? "correct" : "wrong";
+      text(k, `Observer bet ${state.observerGuess.toUpperCase()} — ${verdict}`, cx, 385, {
+        size: 13,
+        color: COLORS.textDim,
+        z: 1,
+      });
     }
 
     const canTreat =
@@ -99,7 +70,7 @@ export function registerRevealScene(k: KAPLAYCtx) {
     }
 
     if (canTreat) {
-      makeButton(k, "CAT TREAT", k.center().x - 120, 450, 170, 44, () => {
+      makeButton(k, "CAT TREAT", cx - 120, 450, 170, 44, () => {
         const rerolled = useCatTreat(state);
         if (!rerolled) return;
         playItemUse();
@@ -115,7 +86,7 @@ export function registerRevealScene(k: KAPLAYCtx) {
       });
     }
 
-    const continueX = canTreat ? k.center().x + 120 : k.center().x;
+    const continueX = canTreat ? cx + 120 : cx;
     const continueLabel = state.globalRound >= 9 ? "FINISH" : "NEXT ROUND";
 
     makeButton(k, continueLabel, continueX, 450, 170, 44, () => {

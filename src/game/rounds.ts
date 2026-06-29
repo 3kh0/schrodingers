@@ -7,10 +7,10 @@ export const ROUNDS: RoundConfig[] = [
     roundInAct: 1,
     actTitle: "THE BOX",
     title: "First Collapse",
-    briefing: "Pure 50/50. No items. Learn the dread.",
+    briefing: "Pure 50/50.",
     twist: "none",
     observerBets: false,
-    itemsDisabled: false,
+    itemsDisabled: true,
     damageMultiplier: 1,
   },
   {
@@ -18,11 +18,11 @@ export const ROUNDS: RoundConfig[] = [
     act: 1,
     roundInAct: 2,
     actTitle: "THE BOX",
-    title: "Toolkit",
-    briefing: "The Observer grants you a quantum tool.",
-    twist: "grant_item",
+    title: "Cold Open",
+    briefing: "Trust your gut.",
+    twist: "none",
     observerBets: false,
-    itemsDisabled: false,
+    itemsDisabled: true,
     damageMultiplier: 1,
   },
   {
@@ -30,11 +30,11 @@ export const ROUNDS: RoundConfig[] = [
     act: 1,
     roundInAct: 3,
     actTitle: "THE BOX",
-    title: "Dual Observation",
-    briefing: "The Observer bets too. Winner takes an item.",
-    twist: "observer_bets",
-    observerBets: true,
-    itemsDisabled: false,
+    title: "No Safety Net",
+    briefing: "Last chance.",
+    twist: "none",
+    observerBets: false,
+    itemsDisabled: true,
     damageMultiplier: 1,
   },
   {
@@ -43,7 +43,7 @@ export const ROUNDS: RoundConfig[] = [
     roundInAct: 1,
     actTitle: "SUPERPOSITION",
     title: "Phantom Box",
-    briefing: "Two boxes. Only one is real.",
+    briefing: "Let's make this more interesting. Only one of the boxes is real.",
     twist: "phantom_box",
     observerBets: false,
     itemsDisabled: false,
@@ -79,7 +79,7 @@ export const ROUNDS: RoundConfig[] = [
     roundInAct: 1,
     actTitle: "OBSERVER EFFECT",
     title: "Disturbed State",
-    briefing: "Peeking changes reality. X-Ray shifts the odds.",
+    briefing: '"Now we\'re really playing." Peeking shifts reality — X-Ray with care.',
     twist: "observer_effect",
     observerBets: false,
     itemsDisabled: false,
@@ -117,4 +117,14 @@ export function getRoundConfig(globalRound: number): RoundConfig {
 
 export function isNewAct(globalRound: number): boolean {
   return globalRound === 1 || globalRound === 4 || globalRound === 7;
+}
+
+// Buckshot-style escalation: lives reset and grow each act (2 → 4 → 6).
+export function actBaseLives(act: number): number {
+  return act * 2;
+}
+
+// First global round of a given act (1, 4, 7).
+export function actStartRound(act: number): number {
+  return (act - 1) * 3 + 1;
 }

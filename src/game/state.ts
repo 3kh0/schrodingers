@@ -9,9 +9,9 @@ import {
   peekBox,
   updateBoxInList,
 } from "./boxes";
-import { addItem, randomItem, removeItem } from "./items";
+import { ITEMS, addItem, randomItem, removeItem } from "./items";
 import { observerGuess } from "./observer";
-import { getRoundConfig } from "./rounds";
+import { actBaseLives, actStartRound, getRoundConfig } from "./rounds";
 import type { GameState, Guess, ItemId, RunStats } from "./types";
 
 export type { GameState, Guess, ItemId, EndState } from "./types";
@@ -30,26 +30,50 @@ function emptyStats(): RunStats {
 export function createInitialState(): GameState {
   return setupRound({
     globalRound: 1,
-    playerLives: 3,
-    observerLives: 3,
-    maxPlayerLives: 3,
     inventory: [],
     catTreatUsed: false,
     stats: emptyStats(),
   });
 }
 
+// Dealer "tops up" the player's kit when an act escalates.
+function grantStarterItems(
+  inventory: ItemId[],
+  count: number,
+): { inventory: ItemId[]; got: ItemId[] } {
+  let inv = inventory;
+  const got: ItemId[] = [];
+  for (let i = 0; i < count; i++) {
+    const item = randomItem(inv);
+    const next = addItem(inv, item);
+    if (next === inv) break; // inventory full
+    got.push(item);
+    inv = next;
+  }
+  return { inventory: inv, got };
+}
+
 function setupRound(partial: Partial<GameState> & Pick<GameState, "globalRound">): GameState {
   const roundConfig = getRoundConfig(partial.globalRound);
   const { boxes, activeBoxId, shotgunAliveCount } = createBoxesForRound(roundConfig.twist);
 
+  // At each act's first round the duel resets to that act's life pool (2 / 4 / 6).
+  const actStart = roundConfig.roundInAct === 1;
+  const base = actBaseLives(roundConfig.act);
+  const playerLives = actStart ? base : (partial.playerLives ?? base);
+  const observerLives = actStart ? base : (partial.observerLives ?? base);
+  const maxPlayerLives = actStart ? base : (partial.maxPlayerLives ?? base);
+
   let inventory = partial.inventory ?? [];
   let message = roundConfig.briefing;
 
-  if (roundConfig.twist === "grant_item") {
-    const item = randomItem(inventory);
-    inventory = addItem(inventory, item);
-    message = `Received ${item.toUpperCase()}. ${roundConfig.briefing}`;
+  // Items enter the game when the Observer escalates (Act 2+ openings).
+  if (actStart && roundConfig.act >= 2) {
+    const { inventory: inv, got } = grantStarterItems(inventory, 2);
+    inventory = inv;
+    if (got.length) {
+      message = `${roundConfig.briefing} Received ${got.map((g) => ITEMS[g].short).join(", ")}.`;
+    }
   }
 
   if (partial.cigaretteRisk) {
@@ -59,9 +83,9 @@ function setupRound(partial: Partial<GameState> & Pick<GameState, "globalRound">
   return {
     act: roundConfig.act,
     globalRound: partial.globalRound,
-    playerLives: partial.playerLives ?? 3,
-    observerLives: partial.observerLives ?? 3,
-    maxPlayerLives: partial.maxPlayerLives ?? 3,
+    playerLives,
+    observerLives,
+    maxPlayerLives,
     inventory,
     boxes,
     activeBoxId,
@@ -149,13 +173,12 @@ export function useItem(state: GameState, itemId: ItemId): GameState {
       break;
     }
     case "decoherence": {
-      if (next.maxPlayerLives >= 4) {
-        next.message = "Already at maximum coherence.";
+      if (next.playerLives >= next.maxPlayerLives) {
+        next.message = "Already at full coherence.";
         return state;
       }
-      next.maxPlayerLives = 4;
-      next.playerLives = Math.min(next.playerLives + 1, 4);
-      next.message = "Decoherence Patch: +1 life. Max coherence is now 4.";
+      next.playerLives = Math.min(next.playerLives + 1, next.maxPlayerLives);
+      next.message = `Decoherence Patch: +1 life (${next.playerLives}/${next.maxPlayerLives}).`;
       break;
     }
     case "cigarette": {
@@ -255,10 +278,10 @@ export function resolveGuess(state: GameState, guess: Guess): GameState {
   if (observerGuessVal && !observerCorrect) stats.observerWrong++;
 
   let message = phantomWrong
-    ? "PHANTOM BOX — no cat inside. You lose coherence."
+    ? "Wrong. No cat inside."
     : playerCorrect
-      ? `Correct! Cat was ${outcome.toUpperCase()}. Observer bleeds.`
-      : `Wrong. Cat was ${outcome.toUpperCase()}. You lose coherence.`;
+      ? `Correct! Cat was ${outcome.toUpperCase()}.`
+      : `Wrong. Cat was ${outcome.toUpperCase()}.`;
 
   if (observerGuessVal) {
     message += ` Observer bet ${observerGuessVal.toUpperCase()}${observerCorrect ? " (correct)" : " (wrong)"}.`;
@@ -313,11 +336,15 @@ export function useCatTreat(state: GameState): GameState | null {
 }
 
 export function advanceRound(state: GameState): GameState {
-  const nextRound = state.globalRound + 1;
+  // Draining the Observer in Act 1/2 clears the act early — skip ahead to the
+  // next act opening, where the dealer reloads with more lives and items.
+  const clearedEarly = state.observerLives <= 0 && state.act < 3;
+  const nextRound = clearedEarly ? actStartRound(state.act + 1) : state.globalRound + 1;
   if (nextRound > 9) return state;
 
   return setupRound({
     globalRound: nextRound,
+    // Lives carry within an act; setupRound overrides them at each act opening.
     playerLives: state.playerLives,
     observerLives: state.observerLives,
     maxPlayerLives: state.maxPlayerLives,
@@ -331,8 +358,10 @@ export function advanceRound(state: GameState): GameState {
   });
 }
 
+// Only draining the Observer in the final act wins the run; earlier depletions
+// just clear the current act (handled by advanceRound).
 export function isVictory(state: GameState): boolean {
-  return state.observerLives <= 0;
+  return state.observerLives <= 0 && state.act >= 3;
 }
 
 export function isDefeat(state: GameState): boolean {

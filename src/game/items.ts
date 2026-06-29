@@ -1,4 +1,4 @@
-import { quantumRandom } from "./rng";
+import { qrand } from "./rng";
 import type { ItemId } from "./types";
 
 export type ItemDef = {
@@ -37,7 +37,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     id: "decoherence",
     name: "Decoherence Patch",
     short: "PATCH",
-    description: "Restore +1 life (max 4)",
+    description: "Restore +1 life",
   },
   cigarette: {
     id: "cigarette",
@@ -59,11 +59,11 @@ export const ITEMS: Record<ItemId, ItemDef> = {
   },
 };
 
-export const ALL_ITEM_IDS = Object.keys(ITEMS) as ItemId[];
+const ALL_ITEM_IDS = Object.keys(ITEMS) as ItemId[];
 
 export function randomItem(exclude: ItemId[] = []): ItemId {
   const pool = ALL_ITEM_IDS.filter((id) => !exclude.includes(id));
-  const idx = Math.floor(quantumRandom() * pool.length);
+  const idx = Math.floor(qrand() * pool.length);
   return pool[idx] ?? "geiger";
 }
 

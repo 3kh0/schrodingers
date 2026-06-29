@@ -1,4 +1,4 @@
-import { quantumRandom, collapse, type Outcome } from "./rng";
+import { qrand, collapse, type Outcome } from "./rng";
 import type { BoxState, RoundTwist } from "./types";
 
 function clampProb(p: number): number {
@@ -24,7 +24,7 @@ export function createBoxesForRound(twist: RoundTwist): {
 } {
   switch (twist) {
     case "phantom_box": {
-      const realIsA = quantumRandom() < 0.75;
+      const realIsA = qrand() < 0.75;
       const boxes = [makeBox("a", "BOX A", 0.5, !realIsA), makeBox("b", "BOX B", 0.5, realIsA)];
       return { boxes, activeBoxId: "a" };
     }
@@ -37,12 +37,12 @@ export function createBoxesForRound(twist: RoundTwist): {
     }
 
     case "quantum_shotgun": {
-      const aliveCount = 1 + Math.floor(quantumRandom() * 3);
+      const aliveCount = 1 + Math.floor(qrand() * 3);
       const outcomes: Outcome[] = Array.from({ length: 4 }, (_, i) =>
         i < aliveCount ? "alive" : "dead",
       );
       for (let i = outcomes.length - 1; i > 0; i--) {
-        const j = Math.floor(quantumRandom() * (i + 1));
+        const j = Math.floor(qrand() * (i + 1));
         [outcomes[i], outcomes[j]] = [outcomes[j], outcomes[i]];
       }
       const boxes = outcomes.map((o, i) => {
@@ -112,7 +112,7 @@ export function applyHalfLifeDecay(boxes: BoxState[], amount = 0.1): BoxState[] 
 }
 
 export function applyObserverEffectPeek(box: BoxState): BoxState {
-  const shift = (quantumRandom() - 0.5) * 0.3;
+  const shift = (qrand() - 0.5) * 0.3;
   const next = clampProb(box.trueProbability + shift);
   return {
     ...box,

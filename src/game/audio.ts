@@ -1,4 +1,4 @@
-import { quantumRandom } from "./rng";
+import { qrand } from "./rng";
 
 let ctx: AudioContext | null = null;
 let geigerTimer: ReturnType<typeof setInterval> | null = null;
@@ -40,7 +40,7 @@ function click(gain = 0.12) {
   const buffer = audio.createBuffer(1, audio.sampleRate * 0.02, audio.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < data.length; i++) {
-    data[i] = (quantumRandom() * 2 - 1) * (1 - i / data.length);
+    data[i] = (qrand() * 2 - 1) * (1 - i / data.length);
   }
   const src = audio.createBufferSource();
   const g = audio.createGain();
@@ -68,17 +68,6 @@ export function stopGeiger() {
   if (geigerTimer) {
     clearInterval(geigerTimer);
     geigerTimer = null;
-  }
-}
-
-export function playCollapse(alive: boolean) {
-  stopGeiger();
-  if (alive) {
-    tone(620, 0.08, "square", 0.06);
-    tone(880, 0.15, "square", 0.05);
-  } else {
-    tone(180, 0.25, "sawtooth", 0.09);
-    tone(90, 0.4, "sawtooth", 0.07);
   }
 }
 
