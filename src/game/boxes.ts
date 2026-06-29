@@ -20,45 +20,14 @@ function makeBox(id: string, label: string, trueProbability = 0.5, phantom = fal
 export function createBoxesForRound(twist: RoundTwist): {
   boxes: BoxState[];
   activeBoxId: string;
-  shotgunAliveCount?: number;
 } {
-  switch (twist) {
-    case "phantom_box": {
-      const realIsA = qrand() < 0.75;
-      const boxes = [makeBox("a", "BOX A", 0.5, !realIsA), makeBox("b", "BOX B", 0.5, realIsA)];
-      return { boxes, activeBoxId: "a" };
-    }
-
-    case "entanglement": {
-      const boxes = [makeBox("a", "BOX A", 0.5), makeBox("b", "BOX B", 0.5)];
-      boxes[0].entangledWith = "b";
-      boxes[1].entangledWith = "a";
-      return { boxes, activeBoxId: "a" };
-    }
-
-    case "quantum_shotgun": {
-      const aliveCount = 1 + Math.floor(qrand() * 3);
-      const outcomes: Outcome[] = Array.from({ length: 4 }, (_, i) =>
-        i < aliveCount ? "alive" : "dead",
-      );
-      for (let i = outcomes.length - 1; i > 0; i--) {
-        const j = Math.floor(qrand() * (i + 1));
-        [outcomes[i], outcomes[j]] = [outcomes[j], outcomes[i]];
-      }
-      const boxes = outcomes.map((o, i) => {
-        const box = makeBox(`q${i + 1}`, `Q${i + 1}`, o === "alive" ? 0.99 : 0.01);
-        box.outcome = o;
-        return box;
-      });
-      return { boxes, activeBoxId: "q1", shotgunAliveCount: aliveCount };
-    }
-
-    case "half_life_decay":
-      return { boxes: [makeBox("main", "BOX", 0.6)], activeBoxId: "main" };
-
-    default:
-      return { boxes: [makeBox("main", "BOX", 0.5)], activeBoxId: "main" };
+  if (twist === "phantom_box") {
+    const realIsA = qrand() < 0.75;
+    const boxes = [makeBox("a", "BOX A", 0.5, !realIsA), makeBox("b", "BOX B", 0.5, realIsA)];
+    return { boxes, activeBoxId: "a" };
   }
+
+  return { boxes: [makeBox("main", "BOX", 0.5)], activeBoxId: "main" };
 }
 
 export function getActiveBox(state: { boxes: BoxState[]; activeBoxId: string }): BoxState {
@@ -97,18 +66,6 @@ export function collapseBox(
   }
 
   return { box: collapsed, outcome };
-}
-
-export function applyHalfLifeDecay(boxes: BoxState[], amount = 0.1): BoxState[] {
-  return boxes.map((b) => {
-    if (b.phantom || b.collapsed) return b;
-    const next = clampProb(b.trueProbability - amount);
-    return {
-      ...b,
-      trueProbability: next,
-      displayedProbability: next,
-    };
-  });
 }
 
 export function applyObserverEffectPeek(box: BoxState): BoxState {

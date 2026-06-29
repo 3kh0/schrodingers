@@ -13,7 +13,6 @@ export function registerActIntroScene(k: KAPLAYCtx) {
 
     playActSting();
 
-    // Act 1 is the bare opening — no items, no twists. Keep its card minimal.
     if (rc.act === 1) {
       text(k, "ACT 1", cx, 230, { size: 48, color: COLORS.crtGreen });
       play();

@@ -3,6 +3,7 @@ import { COLORS, type RGB } from "./config";
 import { ITEMS } from "./items";
 import type { BoxState, GameState, ItemId } from "./types";
 import { getActiveBox } from "./boxes";
+import { actBaseLives } from "./rounds";
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -66,7 +67,7 @@ export function makeButton(
   return { btn, txt };
 }
 
-function livesText(lives: number, max = 3): string {
+function hpt(lives: number, max = 3): string {
   return "♥".repeat(Math.max(0, lives)) + "♡".repeat(Math.max(0, max - lives));
 }
 
@@ -105,27 +106,22 @@ export function drawHeader(k: KAPLAYCtx, state: GameState) {
     color: COLORS.textDim,
     anchor: "topleft",
   });
-  text(k, `RUN ${state.globalRound}/9`, k.center().x, 16, {
-    size: 13,
-    color: COLORS.crtDim,
-    anchor: "top",
-  });
-  text(k, `You ${livesText(state.playerLives, state.maxPlayerLives)}`, k.width() - 20, 16, {
+  const toClear = hpt(state.observerLives, actBaseLives(state.act));
+  text(k, `CLEAR ${toClear}`, k.center().x, 16, { size: 15, color: COLORS.dead, anchor: "top" });
+  text(k, `You ${hpt(state.playerLives, state.maxPlayerLives)}`, k.width() - 20, 16, {
     size: 18,
     color: COLORS.alive,
     anchor: "topright",
   });
 }
 
-export function drawObserverPanel(k: KAPLAYCtx, state: GameState) {
+export function opanel(k: KAPLAYCtx) {
   drawPanel(k, 24, 52, 188, 150, "THE OBSERVER");
-  text(k, livesText(state.observerLives), 118, 120, { size: 26, color: COLORS.dead });
-
-  const quotes = ['"Bet, human."', '"Observe."', '"Collapse it."', '"The cat waits."'];
-  text(k, quotes[state.globalRound % quotes.length], 118, 168, { size: 13, color: COLORS.textDim });
+  text(k, '"I bet too."', 118, 110, { size: 16, color: COLORS.crtGreen });
+  text(k, "guess better than it", 118, 150, { size: 11, color: COLORS.textDim });
 }
 
-export function drawProbabilityDial(k: KAPLAYCtx, state: GameState) {
+export function pdial(k: KAPLAYCtx, state: GameState) {
   const active = getActiveBox(state);
   drawPanel(k, k.width() - 212, 52, 188, 150, "PROBABILITY");
   text(k, `${Math.round(active.displayedProbability * 100)}%`, k.width() - 118, 118, {
@@ -133,13 +129,6 @@ export function drawProbabilityDial(k: KAPLAYCtx, state: GameState) {
     color: COLORS.crtGreen,
   });
   text(k, "ALIVE", k.width() - 118, 158, { size: 14, color: COLORS.textDim });
-
-  if (state.roundConfig.twist === "quantum_shotgun" && state.shotgunAliveCount) {
-    text(k, `${state.shotgunAliveCount} alive hidden`, k.width() - 118, 182, {
-      size: 11,
-      color: COLORS.textDim,
-    });
-  }
 }
 
 function boxIcon(box: BoxState): string {
@@ -195,12 +184,34 @@ export function drawBoxes(k: KAPLAYCtx, state: GameState, onSelect: (id: string)
   });
 }
 
+function tt(k: KAPLAYCtx, item: ItemId, slotX: number, bottomY: number): GameObj[] {
+  const def = ITEMS[item];
+  const w = 230,
+    h = 50;
+  const x = Math.min(Math.max(slotX, w / 2 + 10), k.width() - w / 2 - 10);
+  const bg = k.add([
+    k.rect(w, h),
+    k.pos(x, bottomY),
+    k.anchor("bot"),
+    k.color(...COLORS.panel),
+    k.outline(1, k.rgb(...COLORS.crtGreen)),
+    k.z(50),
+  ]);
+  const name = text(k, def.name, x, bottomY - h + 12, { size: 12, color: COLORS.crtGreen, z: 51 });
+  const desc = text(k, def.description, x, bottomY - 14, {
+    size: 11,
+    color: COLORS.text,
+    width: w - 16,
+    z: 51,
+  });
+  return [bg, name, desc];
+}
+
 export function drawItemTray(k: KAPLAYCtx, state: GameState, onUse: (item: ItemId) => void) {
-  // No items in play (Act 1, final duel) → hide the tray entirely.
   if (state.roundConfig.itemsDisabled) return;
 
-  const slots = 4;
-  const slotW = (k.width() - 80) / slots;
+  const slots = 4,
+    slotW = (k.width() - 80) / slots;
 
   for (let i = 0; i < slots; i++) {
     const x = 44 + i * slotW + slotW / 2;
@@ -215,8 +226,18 @@ export function drawItemTray(k: KAPLAYCtx, state: GameState, onUse: (item: ItemI
       k.outline(1, k.rgb(...COLORS.panelBorder)),
     ]);
 
-    if (item) makeButton(k, ITEMS[item].short, x, y, slotW - 16, 42, () => onUse(item));
-    else text(k, "—", x, y, { size: 20, color: COLORS.textDim });
+    if (!item) {
+      text(k, "—", x, y, { size: 20, color: COLORS.textDim });
+      continue;
+    }
+
+    const { btn } = makeButton(k, ITEMS[item].short, x, y, slotW - 16, 42, () => onUse(item));
+    let tip: GameObj[] = [];
+    btn.onHover(() => (tip = tt(k, item, x, y - 32)));
+    btn.onHoverEnd(() => {
+      tip.forEach((o) => k.destroy(o));
+      tip = [];
+    });
   }
 }
 

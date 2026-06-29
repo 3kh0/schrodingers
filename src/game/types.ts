@@ -12,15 +12,7 @@ export type ItemId =
   | "catTreat"
   | "schrodingerDice";
 
-export type RoundTwist =
-  | "none"
-  | "observer_bets"
-  | "phantom_box"
-  | "half_life_decay"
-  | "entanglement"
-  | "observer_effect"
-  | "quantum_shotgun"
-  | "final_duel";
+export type RoundTwist = "none" | "phantom_box" | "observer_effect";
 
 export type BoxState = {
   id: string;
@@ -35,11 +27,8 @@ export type BoxState = {
 };
 
 export type RoundConfig = {
-  globalRound: number;
   act: number;
-  roundInAct: number;
   actTitle: string;
-  title: string;
   briefing: string;
   twist: RoundTwist;
   observerBets: boolean;
@@ -57,7 +46,6 @@ export type RunStats = {
 
 export type GameState = {
   act: number;
-  globalRound: number;
   playerLives: number;
   observerLives: number;
   maxPlayerLives: number;
@@ -79,7 +67,6 @@ export type GameState = {
   phantomWrong?: boolean;
   message: string;
   stats: RunStats;
-  shotgunAliveCount?: number;
 };
 
 export type EndState = GameState & { won: boolean };

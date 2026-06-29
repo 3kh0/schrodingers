@@ -1,9 +1,8 @@
 import type { KAPLAYCtx } from "kaplay";
 import { playItemUse } from "../audio";
 import { COLORS, type RGB } from "../config";
-import { isNewAct } from "../rounds";
 import type { GameState } from "../types";
-import { advanceRound, isDefeat, isVictory, useCatTreat } from "../state";
+import { advanceRound, clearedAct, isDefeat, isVictory, useCatTreat } from "../state";
 import { drawScanlines, makeButton, screenShake, text } from "../ui";
 
 export function registerRevealScene(k: KAPLAYCtx) {
@@ -59,14 +58,10 @@ export function registerRevealScene(k: KAPLAYCtx) {
       !state.catTreatUsed && state.inventory.includes("catTreat") && state.playerCorrect === false;
 
     function continueGame() {
+      // Win/lose were already routed to "end" before this scene; here the duel continues.
+      const intoNewAct = clearedAct(state);
       const next = advanceRound(state);
-      if (isDefeat(state) || isVictory(state)) return;
-
-      if (isNewAct(next.globalRound)) {
-        k.go("actIntro", next);
-      } else {
-        k.go("play", next);
-      }
+      k.go(intoNewAct ? "actIntro" : "play", next);
     }
 
     if (canTreat) {
@@ -87,15 +82,9 @@ export function registerRevealScene(k: KAPLAYCtx) {
     }
 
     const continueX = canTreat ? cx + 120 : cx;
-    const continueLabel = state.globalRound >= 9 ? "FINISH" : "NEXT ROUND";
+    const continueLabel = clearedAct(state) ? "NEXT ACT" : "CONTINUE";
 
-    makeButton(k, continueLabel, continueX, 450, 170, 44, () => {
-      if (state.globalRound >= 9) {
-        k.go("end", { ...state, won: state.playerLives > 0 });
-        return;
-      }
-      continueGame();
-    });
+    makeButton(k, continueLabel, continueX, 450, 170, 44, () => continueGame());
 
     drawScanlines(k);
   });

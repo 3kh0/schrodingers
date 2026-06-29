@@ -8,11 +8,12 @@ import {
   drawHeader,
   drawItemTray,
   drawMessageLog,
-  drawObserverPanel,
-  drawProbabilityDial,
+  opanel,
+  pdial,
   drawScanlines,
   makeButton,
   screenShake,
+  text,
 } from "../ui";
 
 export function registerPlayScene(k: KAPLAYCtx) {
@@ -23,9 +24,9 @@ export function registerPlayScene(k: KAPLAYCtx) {
     const active = () => current.boxes.find((b) => b.id === current.activeBoxId)!;
 
     drawHeader(k, current);
-    // Act 1 is just coinflips — keep the Observer out of sight until items appear.
-    if (current.act > 1) drawObserverPanel(k, current);
-    drawProbabilityDial(k, current);
+    // The clear meter (header) tracks the duel; the Observer panel only appears when it bets.
+    if (current.roundConfig.observerBets) opanel(k);
+    pdial(k, current);
 
     drawBoxes(k, current, (id) => {
       if (!guessing) return;
@@ -80,22 +81,13 @@ export function registerPlayScene(k: KAPLAYCtx) {
     makeButton(k, "ALIVE", k.center().x - 130, betY, 150, 46, () => commitGuess("alive"));
     makeButton(k, "DEAD", k.center().x + 130, betY, 150, 46, () => commitGuess("dead"));
 
-    if (current.roundConfig.twist === "phantom_box") {
-      k.add([
-        k.text("Select a box, then bet. One is a phantom.", { size: 12 }),
-        k.pos(k.center().x, 210),
-        k.anchor("center"),
-        k.color(...COLORS.crtDim),
-      ]);
+    // Guidance sits below the boxes (boxes end ~y290, message log at y360) so nothing overlaps.
+    if (current.boxes.length > 1) {
+      text(k, "Select a box, then bet.", k.center().x, 305, { size: 12, color: COLORS.crtDim });
     }
 
     if (current.schrodingerDiceActive) {
-      k.add([
-        k.text("DICE ACTIVE", { size: 12 }),
-        k.pos(k.center().x, 195),
-        k.anchor("center"),
-        k.color(...COLORS.crtGreen),
-      ]);
+      text(k, "DICE ACTIVE", k.center().x, 325, { size: 12, color: COLORS.crtGreen });
     }
 
     drawScanlines(k);
