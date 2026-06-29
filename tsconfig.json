@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*.ts", "vite.config.ts"]
+}

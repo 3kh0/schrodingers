@@ -1,0 +1,25 @@
+{
+  "name": "schrodingers",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview",
+    "check": "tsc",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "kaplay": "^3001.0.19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.71.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.0"
+  }
+}
