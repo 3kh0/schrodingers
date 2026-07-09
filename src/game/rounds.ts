@@ -1,5 +1,7 @@
 import type { RoundConfig } from "./types";
 
+export const ACT1_CORRECT_BIAS = 0.58;
+
 export const ACTS: RoundConfig[] = [
   {
     act: 1,

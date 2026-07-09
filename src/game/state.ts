@@ -10,7 +10,8 @@ import {
 } from "./boxes";
 import { ITEMS, addItem, randomItem, removeItem } from "./items";
 import { observerGuess } from "./observer";
-import { FINAL_ACT, actBaseLives, getActConfig } from "./rounds";
+import { ACT1_CORRECT_BIAS, FINAL_ACT, actBaseLives, getActConfig } from "./rounds";
+import { qrand } from "./rng";
 import type { GameState, Guess, ItemId, RunStats } from "./types";
 
 export type { GameState, Guess, ItemId, EndState } from "./types";
@@ -217,7 +218,18 @@ export function resolveGuess(state: GameState, guess: Guess): GameState {
 
   const phantomWrong = active.phantom;
 
-  const { box: collapsed, partner: collapsedPartner, outcome } = collapseBox(active, partner);
+  let boxToCollapse = active;
+  if (state.act === 1 && !active.phantom && active.outcome === undefined) {
+    const favorPlayer = qrand() < ACT1_CORRECT_BIAS;
+    const outcome = favorPlayer ? guess : guess === "alive" ? "dead" : "alive";
+    boxToCollapse = { ...active, outcome };
+  }
+
+  const {
+    box: collapsed,
+    partner: collapsedPartner,
+    outcome,
+  } = collapseBox(boxToCollapse, partner);
 
   let boxes = updateBoxInList(state.boxes, collapsed);
   if (collapsedPartner) {
