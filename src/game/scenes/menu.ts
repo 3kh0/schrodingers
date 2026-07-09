@@ -1,5 +1,5 @@
 import type { KAPLAYCtx } from "kaplay";
-import { ensureAudio, initAudioSettings } from "../audio";
+import { ensureAudio, initAudioSettings, startBgm } from "../audio";
 import { COLORS } from "../config";
 import { createInitialState } from "../state";
 import { drawScanlines, makeButton, text } from "../ui";
@@ -30,6 +30,7 @@ export function registerMenuScene(k: KAPLAYCtx) {
 
     makeButton(k, "BEGIN", cx, 400, 200, 50, () => {
       ensureAudio();
+      startBgm();
       k.go("actIntro", createInitialState());
     });
 
