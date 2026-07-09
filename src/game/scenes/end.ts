@@ -1,4 +1,4 @@
-import type { GameObj, KAPLAYCtx } from "kaplay";
+import type { GameObj, KAPLAYCtx, TextComp } from "kaplay";
 import { COLORS, type RGB } from "../config";
 import type { EndState } from "../types";
 import { drawScanlines, makeButton, text } from "../ui";
@@ -62,9 +62,18 @@ export function registerEndScene(k: KAPLAYCtx) {
 
     let y = 558;
     for (const s of SCIENCE) {
-      at(text(k, s.title, cx, y, { size: 15, color: COLORS.alive }), y);
-      at(text(k, s.body, cx, y + 24, { size: 13, color: COLORS.text, width: 720 }), y + 24);
-      y += 92;
+      at(text(k, s.title, cx, y, { size: 15, color: COLORS.alive, anchor: "top" }), y);
+      const body = at(
+        text(k, s.body, cx, y + 28, {
+          size: 13,
+          color: COLORS.text,
+          width: 720,
+          anchor: "top",
+        }),
+        y + 28,
+      );
+      // Anchor top so multi-line body grows down (center was overlapping titles).
+      y += 28 + (body as GameObj<TextComp>).height + 36;
     }
 
     const link = k.add([
