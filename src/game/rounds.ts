@@ -1,7 +1,5 @@
 import type { RoundConfig } from "./types";
 
-// One signature mechanic per act. Each act is a duel that runs until one side's
-// lives hit 0 — there are no fixed sub-rounds.
 export const ACTS: RoundConfig[] = [
   {
     act: 1,
@@ -36,7 +34,6 @@ export function getActConfig(act: number): RoundConfig {
   return ACTS[Math.min(Math.max(act, 1), ACTS.length) - 1];
 }
 
-// Buckshot-style escalation: lives reset and grow each act (3 → 4 → 5).
 export function actBaseLives(act: number): number {
   return act + 2;
 }

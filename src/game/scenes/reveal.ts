@@ -58,7 +58,6 @@ export function registerRevealScene(k: KAPLAYCtx) {
       !state.catTreatUsed && state.inventory.includes("catTreat") && state.playerCorrect === false;
 
     function continueGame() {
-      // Win/lose were already routed to "end" before this scene; here the duel continues.
       const intoNewAct = clearedAct(state);
       const next = advanceRound(state);
       k.go(intoNewAct ? "actIntro" : "play", next);

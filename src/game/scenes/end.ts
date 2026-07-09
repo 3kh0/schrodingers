@@ -8,15 +8,15 @@ const LEARN_MORE_URL = "https://en.wikipedia.org/wiki/Schr%C3%B6dinger%27s_cat";
 const SCIENCE: { title: string; body: string }[] = [
   {
     title: "SUPERPOSITION",
-    body: "Until it is measured, a quantum system holds every possible state at once, which means the cat is alive AND dead. The probability is just how those states are weighted.",
+    body: "Superposition is the idea that a tiny quantum particle can be in multiple states at the same time. Imagine a coin spinning in the air, while it's spinning, it's not just heads or tails, it's both at once. Only when it lands (or gets measured) does it become one or the other. This isn't because we don't know the answer, the particle genuinely exists in all possibilities simultaneously until something forces it to pick one.",
   },
   {
     title: "DECOHERENCE",
-    body: "Contact with the environment collapses superposition into one definite outcome. Your 'coherence' (lives) is that fragile in-between, lose it all and you decohere.",
+    body: "Decoherence is what happens when the quantum world collides with our normal, everyday environment. When a quantum particle bumps into air molecules, light, heat, or anything else around it, it loses its ability to stay in multiple states at once. It's like the spinning coin finally getting touched or disturbed, it has to settle on heads or tails. This is why we never see big things like cats or people being in two states at the same time in real life.",
   },
   {
     title: "THE OBSERVER EFFECT",
-    body: "Measuring a quantum system disturbs it. Peeking inside a box can shift the very odds you were trying to read — observation is never free.",
+    body: "The observer effect means that simply trying to measure or look at a quantum particle changes what it does. Before you measure it, the particle can be in superposition (many states at once). But the moment you check on it, it is forced to pick one definite state. It's not magic eyes or conscious observation that matters; it's the physical interaction of the measurement itself that collapses all the possibilities into one outcome.",
   },
 ];
 

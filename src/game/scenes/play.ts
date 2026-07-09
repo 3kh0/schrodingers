@@ -24,7 +24,6 @@ export function registerPlayScene(k: KAPLAYCtx) {
     const active = () => current.boxes.find((b) => b.id === current.activeBoxId)!;
 
     drawHeader(k, current);
-    // The clear meter (header) tracks the duel; the Observer panel only appears when it bets.
     if (current.roundConfig.observerBets) opanel(k);
     pdial(k, current);
 
@@ -81,7 +80,6 @@ export function registerPlayScene(k: KAPLAYCtx) {
     makeButton(k, "ALIVE", k.center().x - 130, betY, 150, 46, () => commitGuess("alive"));
     makeButton(k, "DEAD", k.center().x + 130, betY, 150, 46, () => commitGuess("dead"));
 
-    // Guidance sits below the boxes (boxes end ~y290, message log at y360) so nothing overlaps.
     if (current.boxes.length > 1) {
       text(k, "Select a box, then bet.", k.center().x, 305, { size: 12, color: COLORS.crtDim });
     }

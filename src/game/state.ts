@@ -53,7 +53,7 @@ function grantStarterItems(
 
 type SetupOpts = {
   act: number;
-  freshAct: boolean; // true = new act opening (reset lives, deal items); false = next box, same duel
+  freshAct: boolean;
   playerLives?: number;
   observerLives?: number;
   maxPlayerLives?: number;
@@ -67,7 +67,6 @@ function setupAct(opts: SetupOpts): GameState {
   const roundConfig = getActConfig(opts.act);
   const { boxes, activeBoxId } = createBoxesForRound(roundConfig.twist);
 
-  // A fresh act resets both sides to that act's life pool; mid-act it carries.
   const base = actBaseLives(opts.act);
   const playerLives = opts.freshAct ? base : (opts.playerLives ?? base);
   const observerLives = opts.freshAct ? base : (opts.observerLives ?? base);
@@ -76,7 +75,6 @@ function setupAct(opts: SetupOpts): GameState {
   let inventory = opts.inventory ?? [];
   let message = roundConfig.briefing;
 
-  // Items are dealt only at an act opening (Act 2+).
   if (opts.freshAct && opts.act >= 2) {
     const { inventory: inv, got } = grantStarterItems(inventory, 2);
     inventory = inv;
@@ -226,7 +224,6 @@ export function resolveGuess(state: GameState, guess: Guess): GameState {
     boxes = updateBoxInList(boxes, collapsedPartner);
   }
 
-  // Dice guarantees a win unless rolled on a peeked box and the raw guess was wrong.
   let playerCorrect = !phantomWrong && guess === outcome;
   if (
     state.schrodingerDiceActive &&
@@ -262,7 +259,6 @@ export function resolveGuess(state: GameState, guess: Guess): GameState {
     observerGuessVal = observerGuess(active.displayedProbability);
     observerCorrect = observerGuessVal === outcome && !phantomWrong;
 
-    // Beat the Observer's bet → you take an item.
     if (!observerCorrect && !phantomWrong) {
       inventory = addItem(inventory, randomItem(inventory));
     }
