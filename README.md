@@ -1,6 +1,6 @@
 # Schrödinger's Box
 
-A quick game about quantum randomness, probability, and the observer effect inspried by [Buckshot Roulette](https://store.steampowered.com/app/2835570/).
+A quick game about quantum randomness, probability, and the observer effect inspired by [Buckshot Roulette](https://store.steampowered.com/app/2835570/).
 
 This is my first time working with [KAPLAY](https://kaplayjs.com/), so the code is a bit messy and might be unorthodox.
 
